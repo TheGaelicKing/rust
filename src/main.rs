@@ -57,7 +57,12 @@ fn blackjack(term: &Term, styles: &[Style; 5], _rng: &ThreadRng, _stats: &mut [i
     draw_header(styles);
     println!("Welcome to blackjack!\n\nThe goal of the game is to reach cards which value the closet to 21 without going over this number.\n\nPress [h] to hit\nPress [s] to stand");
     wait(term, styles);
+
+    
 }
+
+// Generate card
+
 
 // Lottery
 fn lottery(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, stats: &mut [i32; 1]) {
