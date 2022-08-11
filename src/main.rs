@@ -43,7 +43,7 @@ fn main() {
                 break;
             }
         };
-      drop(choice);
+        drop(choice);
     }
 
     // Exit the terminal
