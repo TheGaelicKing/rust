@@ -33,7 +33,7 @@ fn main() {
     loop {
         let choice = &draw_menu_screen(&term, &styles, &mut player_stats) as &str;
         match choice {
-            "1" => blackjack(&term, &styles, &rng, &mut player_stats),
+            "1" => blackjack(&term, &styles, &mut rng, &mut player_stats),
             "2" => lottery(&term, &styles, &mut rng, &mut player_stats),
             "3" => {
                 break;
@@ -43,6 +43,7 @@ fn main() {
                 break;
             }
         };
+      drop(choice);
     }
 
     // Exit the terminal
@@ -51,18 +52,54 @@ fn main() {
 }
 
 // Blackjack
-fn blackjack(term: &Term, styles: &[Style; 5], _rng: &ThreadRng, _stats: &mut [i32; 1]) {
+fn blackjack(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, _stats: &mut [i32; 1]) {
     // Draw elements
     clear(term);
     draw_header(styles);
     println!("Welcome to blackjack!\n\nThe goal of the game is to reach cards which value the closet to 21 without going over this number.\n\nPress [h] to hit\nPress [s] to stand");
     wait(term, styles);
 
-    
+    // Generate cards
+    let card_info = gen_card(rng);
+    clear(term);
+    draw_header(styles);
+    println!("You drew a(n) {0} of {1}", card_info.2, card_info.3);
+    wait(term, styles);
 }
 
 // Generate card
+fn gen_card(rng: &mut ThreadRng) -> (i32, i32, &str, &str) {
+    let suit: i32 = rng.gen_range(0..=3);
+    let card: i32 = rng.gen_range(0..=12);
 
+    // Generate text from number
+    let suit_text = match suit {
+        0 => "Spades",
+        1 => "Hearts",
+        2 => "Clubs",
+        3 => "Diamonds",
+        _ => "Unknown",
+    };
+    let card_text = match card {
+        0 => "Ace",
+        1 => "2",
+        2 => "3",
+        3 => "4",
+        4 => "5",
+        5 => "6",
+        6 => "7",
+        7 => "8",
+        8 => "9",
+        9 => "10",
+        10 => "Jack",
+        11 => "Queen",
+        12 => "King",
+        _ => "Unknown",
+    };
+
+    // Return card information
+    (card, suit, card_text, suit_text)
+}
 
 // Lottery
 fn lottery(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, stats: &mut [i32; 1]) {
