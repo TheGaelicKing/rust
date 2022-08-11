@@ -11,7 +11,6 @@ const PANIC_MSG: &str = "An error has occurred";
 fn main() {
     // Create references
     let term = Term::stdout();
-    let mut rng = rand::thread_rng();
 
     // Styles
     let styles = [
@@ -33,8 +32,8 @@ fn main() {
     loop {
         let choice = &draw_menu_screen(&term, &styles, &mut player_stats) as &str;
         match choice {
-            "1" => blackjack(&term, &styles, &mut rng, &mut player_stats),
-            "2" => lottery(&term, &styles, &mut rng, &mut player_stats),
+            "1" => blackjack(&term, &styles, &mut player_stats),
+            "2" => lottery(&term, &styles, &mut player_stats),
             "3" => {
                 break;
             }
@@ -52,23 +51,47 @@ fn main() {
 }
 
 // Blackjack
-fn blackjack(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, _stats: &mut [i32; 1]) {
+fn blackjack(term: &Term, styles: &[Style; 5], stats: &mut [i32; 1]) {
     // Draw elements
     clear(term);
     draw_header(styles);
     println!("Welcome to blackjack!\n\nThe goal of the game is to reach cards which value the closet to 21 without going over this number.\n\nPress [h] to hit\nPress [s] to stand");
     wait(term, styles);
 
-    // Generate cards
-    let card_info = gen_card(rng);
+    // Prompt for bet
     clear(term);
     draw_header(styles);
-    println!("You drew a(n) {0} of {1}", card_info.2, card_info.3);
+    draw_money(styles, stats);
+    println!("Enter your bet:\n");
+    let bet: i32 = term.read_line().expect(PANIC_MSG).parse().expect(PANIC_MSG);
+
+    // Present bet
+    if bet > stats[0] || bet <= 0 {
+        println!("{}", styles[1].apply_to("\nYou can't afford this bet"));
+        wait(term, styles);
+        return;
+    }
+    stats[0] -= bet;
+    println!("\nYou bet {} money", styles[0].apply_to(bet));
+    wait(term, styles);
+
+    // Generate cards
+    clear(term);
+    draw_header(styles);
+    let mut card_value = 0;
+    let mut dealer_card_value = 0;
+    for _i in 0..2 {
+        let card = gen_card();
+        let dealer_card = gen_card();
+        println!("You drew a(n) {0} of {1}", card.2, card.3);
+    }
+
     wait(term, styles);
 }
 
 // Generate card
-fn gen_card(rng: &mut ThreadRng) -> (i32, i32, &str, &str) {
+fn gen_card() -> (i32, i32, &'static str, &'static str) {
+    let mut rng = ThreadRng::default();
     let suit: i32 = rng.gen_range(0..=3);
     let card: i32 = rng.gen_range(0..=12);
 
@@ -102,7 +125,9 @@ fn gen_card(rng: &mut ThreadRng) -> (i32, i32, &str, &str) {
 }
 
 // Lottery
-fn lottery(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, stats: &mut [i32; 1]) {
+fn lottery(term: &Term, styles: &[Style; 5], stats: &mut [i32; 1]) {
+    let mut rng = ThreadRng::default();
+
     // Draw elements
     clear(term);
     draw_header(styles);
@@ -110,14 +135,13 @@ fn lottery(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, stats: &mut [i
     wait(term, styles);
 
     // Prompt for tickets
-    let jackpot = rng.gen_range(((stats[0] * 3) / 4)..=((stats[0] * 4) / 1));
+    let jackpot = rng.gen_range(((stats[0] * 5) / 4)..=((stats[0] * 5) / 1));
     let ticket_price = rng.gen_range(((stats[0] * 1) / 20)..=((stats[0] * 1) / 10));
     clear(term);
     draw_header(styles);
+    draw_money(styles, stats);
     println!(
-        "{0}{1}\n\nThe jackpot is currently {2} money\nThe ticket price is currently {3} money\n\nEnter the number of tickets to buy:\n",
-        styles[4].apply_to("Money: "),
-        styles[4].apply_to(stats[0]),
+        "The jackpot is currently {0} money\nThe ticket price is currently {1} money\n\nEnter the number of tickets to buy:\n",
         styles[0].apply_to(jackpot),
         styles[0].apply_to(ticket_price)
     );
@@ -155,7 +179,7 @@ fn lottery(term: &Term, styles: &[Style; 5], rng: &mut ThreadRng, stats: &mut [i
     let mut won_jackpot = false;
     for _i in 0..num_tickets {
         let jackpot_seed = rng.gen_range(0..=100);
-        if jackpot_seed > 95 {
+        if jackpot_seed > 98 {
             won_jackpot = true;
             break;
         }
@@ -174,15 +198,22 @@ fn draw_menu_screen(term: &Term, styles: &[Style; 5], stats: &mut [i32; 1]) -> S
     // Draw elements
     clear(term);
     draw_header(styles);
-    println!(
-        "{0}{1}\n\nChoose an option:\n\n[1] Blackjack\n[2] Lottery\n[3] Exit\n",
-        styles[4].apply_to("Money: "),
-        styles[4].apply_to(stats[0])
-    );
+    draw_money(styles, stats);
+    println!("Choose an option:\n\n[1] Blackjack\n[2] Lottery\n[3] Exit\n");
 
     // Prompt for user choice
     let choice = term.read_line().expect(PANIC_MSG);
     choice
+}
+
+// Money
+fn draw_money(styles: &[Style; 5], stats: &mut [i32; 1]) {
+    // Money
+    println!(
+        "{0}{1}\n",
+        styles[4].apply_to("Money: "),
+        styles[4].apply_to(stats[0])
+    );
 }
 
 // Header
